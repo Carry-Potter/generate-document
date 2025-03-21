@@ -3,13 +3,11 @@ import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@12.6.0';
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
-  apiVersion: '2023-08-16',
-});
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
@@ -24,11 +22,30 @@ interface TransactionData {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
+    // Validate request method
+    if (req.method !== 'POST') {
+      throw new Error('Method not allowed');
+    }
+
+    // Parse request body
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      throw new Error('Invalid request body');
+    }
+
+    const { sessionId } = body;
+    if (!sessionId?.startsWith('cs_')) {
+      throw new Error('Invalid session ID');
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
@@ -38,6 +55,15 @@ serve(async (req) => {
         } 
       }
     );
+    const token = req.headers.get('Authorization')?.split('Bearer ')[1];
+  if (!token) {
+    return new Response('Nedostaje token', { status: 401 });
+  }
+
+  const { error } = await supabase.auth.getUser(token);
+  if (error) {
+    return new Response('Nevalidan token', { status: 403 });
+  }
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
@@ -45,14 +71,6 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Neautorizovan pristup' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const { sessionId } = await req.json();
-    if (!sessionId?.startsWith('cs_')) {
-      return new Response(
-        JSON.stringify({ error: 'Nevalidan ID sesije' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -194,10 +212,15 @@ serve(async (req) => {
     console.error('PAYMENT VERIFICATION ERROR:', error);
     return new Response(
       JSON.stringify({ 
-        error: 'Došlo je do greške u obradi plaćanja',
-        details: error.message 
+        error: error.message || 'Došlo je do greške u obradi plaćanja'
       }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        status: 400, 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json'
+        } 
+      }
     );
   }
 });

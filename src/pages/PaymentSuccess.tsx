@@ -48,20 +48,25 @@ export default function PaymentSuccess() {
         
         // Ako transakcija ne postoji, pozivamo Edge funkciju
         console.log("Pozivamo verify-payment funkciju...");
-        const { data, error } = await supabase.functions.invoke('verify-payment', {
-          body: { sessionId }
+        const { data, error: functionError } = await supabase.functions.invoke('verify-payment', {
+          body: { sessionId },
+          headers: {
+            'Content-Type': 'application/json',
+          }
         });
         
-        console.log("Odgovor funkcije:", data, error);
+        console.log("Odgovor funkcije:", { data, error: functionError });
         
-        if (error) {
-          console.error('Greška pri verifikaciji plaćanja:', error);
-          setError('Došlo je do greške pri verifikaciji vašeg plaćanja. Molimo vas kontaktirajte podršku.');
+        if (functionError) {
+          console.error('Greška pri verifikaciji plaćanja:', functionError);
+          setError(`Došlo je do greške pri verifikaciji plaćanja: ${functionError.message || 'Nepoznata greška'}`);
         } else if (data) {
           setPaymentDetails(data);
+        } else {
+          setError('Nismo dobili odgovor od servera. Molimo pokušajte ponovo.');
         }
       } catch (err) {
-        console.error('Greška:', err);
+        console.error('Detalji greške:', err);
         setError('Došlo je do neočekivane greške. Molimo vas kontaktirajte podršku.');
       } finally {
         setLoading(false);

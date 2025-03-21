@@ -25,7 +25,7 @@ serve(async (req) => {
   }
   
   try {
-    const siteUrl = Deno.env.get("SITE_URL") || "https://generate-document-mho1ka7ru-mr-robots-projects-3d0db9a8.vercel.app";
+    const siteUrl = Deno.env.get("SITE_URL") || "https://generate-document.vercel.app";
     
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") || "",
