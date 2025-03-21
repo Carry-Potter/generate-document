@@ -28,9 +28,40 @@ serve(async (req) => {
   }
 
   try {
-    // Validate request method
-    if (req.method !== 'POST') {
-      throw new Error('Method not allowed');
+    // Get auth token from request header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Nedostaje autorizacioni token' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Create Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { 
+        global: { 
+          headers: { Authorization: authHeader } 
+        } 
+      }
+    );
+
+    // Verify user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Neautorizovan pristup', details: userError?.message }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // Parse request body
@@ -38,39 +69,23 @@ serve(async (req) => {
     try {
       body = await req.json();
     } catch (e) {
-      throw new Error('Invalid request body');
+      return new Response(
+        JSON.stringify({ error: 'Invalid request body' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     const { sessionId } = body;
     if (!sessionId?.startsWith('cs_')) {
-      throw new Error('Invalid session ID');
-    }
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { 
-        global: { 
-          headers: { Authorization: req.headers.get('Authorization')! } 
-        } 
-      }
-    );
-    const token = req.headers.get('Authorization')?.split('Bearer ')[1];
-  if (!token) {
-    return new Response('Nedostaje token', { status: 401 });
-  }
-
-  const { error } = await supabase.auth.getUser(token);
-  if (error) {
-    return new Response('Nevalidan token', { status: 403 });
-  }
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
       return new Response(
-        JSON.stringify({ error: 'Neautorizovan pristup' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Invalid session ID' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
 
@@ -212,14 +227,12 @@ serve(async (req) => {
     console.error('PAYMENT VERIFICATION ERROR:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Došlo je do greške u obradi plaćanja'
+        error: error.message || 'Došlo je do greške u obradi plaćanja',
+        details: error
       }),
       { 
-        status: 400, 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json'
-        } 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }

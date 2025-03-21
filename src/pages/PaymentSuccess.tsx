@@ -12,8 +12,8 @@ export default function PaymentSuccess() {
   useEffect(() => {
     async function verifyPayment() {
       setLoading(true);
+      console.log("Verifikacija plaćanja...111111111111");
       try {
-        // Dobijanje session_id iz URL parametara
         const params = new URLSearchParams(location.search);
         const sessionId = params.get('session_id');
         
@@ -24,8 +24,8 @@ export default function PaymentSuccess() {
           setLoading(false);
           return;
         }
-        
-        // Pokušaj direktne verifikacije transakcije u bazi
+
+        // First check in database
         const { data: transactionData } = await supabase
           .from('transactions')
           .select('*')
@@ -35,7 +35,6 @@ export default function PaymentSuccess() {
         console.log("Podaci o transakciji iz baze:", transactionData);
         
         if (transactionData && transactionData.length > 0) {
-          // Transakcija već postoji, koristimo te podatke
           setPaymentDetails({
             type: transactionData[0].type,
             planName: transactionData[0].type === 'subscription' ? 'Pretplata' : 'Paket kredita',
@@ -45,12 +44,21 @@ export default function PaymentSuccess() {
           setLoading(false);
           return;
         }
+
+        // Get the current session
+        const { data: { session } } = await supabase.auth.getSession();
         
-        // Ako transakcija ne postoji, pozivamo Edge funkciju
-        console.log("Pozivamo verify-payment funkciju...");
+        if (!session) {
+          setError('Niste prijavljeni.');
+          setLoading(false);
+          return;
+        }
+
+        // Call Edge function with auth header
         const { data, error: functionError } = await supabase.functions.invoke('verify-payment', {
           body: { sessionId },
           headers: {
+            Authorization: `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
           }
         });
@@ -61,7 +69,7 @@ export default function PaymentSuccess() {
           console.error('Greška pri verifikaciji plaćanja:', functionError);
           setError(`Došlo je do greške pri verifikaciji plaćanja: ${functionError.message || 'Nepoznata greška'}`);
         } else if (data) {
-          setPaymentDetails(data);
+          setPaymentDetails(data.payment_details);
         } else {
           setError('Nismo dobili odgovor od servera. Molimo pokušajte ponovo.');
         }
