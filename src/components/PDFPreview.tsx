@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Button from './Button';
+import { useTranslation } from 'react-i18next';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import '../index.css';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
@@ -14,6 +16,7 @@ interface PDFPreviewProps {
 }
 
 export default function PDFPreview({ pdfData, onClose, onProceed }: PDFPreviewProps) {
+  const { t } = useTranslation();
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState(1);
 
@@ -25,13 +28,13 @@ export default function PDFPreview({ pdfData, onClose, onProceed }: PDFPreviewPr
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Document Preview</h2>
+          <h2 className="text-2xl font-bold">{t('documentPreview')}</h2>
           <div className="flex items-center space-x-2">
             <Button variant="outline" onClick={onClose}>
-              Close
+              {t('close')}
             </Button>
             <Button onClick={onProceed}>
-              Proceed to Payment
+              {t('proceedToPayment')}
             </Button>
           </div>
         </div>
@@ -42,7 +45,7 @@ export default function PDFPreview({ pdfData, onClose, onProceed }: PDFPreviewPr
             onLoadSuccess={onDocumentLoadSuccess}
             className="border rounded-lg shadow-lg"
           >
-            <Page pageNumber={pageNumber} />
+            <Page pageNumber={pageNumber} className="no-select" />
           </Document>
 
           {numPages > 1 && (
@@ -55,7 +58,7 @@ export default function PDFPreview({ pdfData, onClose, onProceed }: PDFPreviewPr
                 <ChevronLeft className="h-6 w-6" />
               </button>
               <span className="text-sm">
-                Page {pageNumber} of {numPages}
+                {t('page')} {pageNumber} {t('of')} {numPages}
               </span>
               <button
                 onClick={() => setPageNumber(Math.min(numPages, pageNumber + 1))}

@@ -19,3 +19,14 @@ export interface DocumentInput {
   company_name: string;
   price: number;
 }
+export interface User {
+  id: string;
+  email: string;
+  // Dodaj kredite u tip korisnika
+  credits?: number;
+  subscription?: {
+    status: 'active' | 'canceled' | 'trial';
+    plan: string;
+    expires_at?: string;
+  };
+}

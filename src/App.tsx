@@ -1,29 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { FileText, Languages, Lock, Download, CreditCard, LogOut, Loader2, CheckCircle, ArrowRight } from 'lucide-react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+
+import { FileText, Languages, Lock, Download,  CheckCircle, ArrowRight } from 'lucide-react';
 import Button from './components/Button';
 import AuthModal from './components/AuthModal';
 import PDFPreview from './components/PDFPreview';
 import { supabase } from './lib/supabase';
-import { createDocument, generateDocument, getUserDocuments } from './lib/documents';
-import type { Document } from './lib/types';
-import { pdf } from '@react-pdf/renderer';
-import GeneratedPDF from './components/GeneratedPDF';
-import { convertNumberToWords } from './lib/numbers';
+
+//import {  getUserDocuments } from './lib/documents';
+//import type { Document } from './lib/types';
+import { User } from '@supabase/supabase-js';
+import { UserProvider } from './context/UserContext';
+
 import { motion } from 'framer-motion';
+import Login from './components/AuthModal';
 
 import DocumentForm from './components/DocumentForm';
-
-
-type FormData = {
-  fullName: string;
-  companyName: string;
-  serviceType: string;
-  price: string;
-  language: 'en' | 'sr';
-  startDate: string;
-  endDate: string;
-};
+import Navbar from './components/Navbar';
+import Profile from './pages/Profile';
+import Pricing from './components/Pricing';
+import PaymentSuccess from './pages/PaymentSuccess';
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -40,13 +36,13 @@ const staggerContainer = {
 };
 
 function App() {
-  const [step, setStep] = useState(1);
+ // const [ setStep] = useState(1);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [pdfPreview, setPdfPreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
+  
+  //const [documents, setDocuments] = useState<Document[]>([]);
+ 
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
@@ -69,142 +65,18 @@ function App() {
 
   const loadUserDocuments = async () => {
     try {
-      const docs = await getUserDocuments();
-      setDocuments(docs);
+    //  const docs = await getUserDocuments();
+     // setDocuments(docs);
     } catch (error) {
       console.error('Error loading documents:', error);
     }
   };
 
-  const generateDocumentContent = async (data: FormData) => {
-    try {
-      setIsLoading(true);
-      
-      // Create document record
-      const doc = await createDocument({
-        title: `${data.serviceType} Contract - ${data.companyName}`,
-        content: '',
-        language: data.language,
-        service_type: data.serviceType,
-        company_name: data.companyName,
-        price: parseFloat(data.price),
-      });
+  
 
-      // Generate contract content
-      const mockContract = data.language === 'sr' ? `
-UGOVOR O PRUŽANJU USLUGA
 
-Zaključen dana ${new Date()} u _______________ između:
 
-1. Naručilac usluga
-${data.companyName}, sa sedištem u ________________, 
-PIB: ____________, Matični broj: ___________, 
-kojua zastupa ___________________ (u daljem tekstu: "Naručilac").
-
-2. Izvršilac usluga
-${data.fullName}, JMBG: _____________, 
-sa prebivalištem u ________________, 
-broj lične karte: ____________, 
-izdatu od strane ___________ (u daljem tekstu: "Izvršilac").
-
-Član 1. PREDMET UGOVORA
-Naručilac angažuje Izvršioca da obavi sledeće usluge:
-${data.serviceType}
-
-Član 2. ROK IZVRŠENJA
-Usluge će biti obavljene u periodu od ${new Date(data.startDate).toLocaleDateString('sr-Latn')} do ${new Date(data.endDate).toLocaleDateString('sr-Latn')}.
-
-Član 3. NAKNADA I NAČIN PLAĆANJA
-Za izvršene usluge, Naručilac se obavezuje da Izvršiocu isplati naknadu u iznosu od 
-${parseFloat(data.price).toLocaleString('sr-Latn')} EUR 
-(slovima: ${convertNumberToWords(parseFloat(data.price))} evra).
-
-Plaćanje će biti izvršeno na sledeći način:
-- Bankovni račun Izvršioca: _______________
-- Rok isplate: ${new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString('sr-Latn')}
-- Način isplate: prenos na račun
-
-Član 4. PRAVA I OBAVEZE
-1. Izvršilac garantuje da je posao obavio samostalno i da ne krši prava trećih lica
-2. Naručilac se obavezuje da pruži sve neophodne informacije za izvršenje usluge
-3. U slučaju kašnjenja u isplati, Naručilac se obavezuje da plati zakonsku zateznu kamatu
-
-Član 5. POVERLJIVOST
-Izvršilac se obavezuje da čuva poverljivost svih informacija dobijenih tokom izvršenja posla.
-
-Član 6. PRETHOD UGOVORA
-Svaka strana može raskinuti ugovor uz pisano obaveštenje 7 dana unapred.
-
-Član 7. REŠAVANJE SPOROVA
-Svi sporovi rešavaće se pred nadležnim sudom u ________________.
-` : `
-SERVICE AGREEMENT
-
-This Agreement is made on ${new Date().toLocaleDateString('en-US')} between:
-
-1. Service Recipient
-${data.companyName}, located at ________________, 
-Tax ID: ____________, Registration Number: ___________, 
-represented by ___________________ (hereinafter: "Recipient").
-
-2. Service Provider
-${data.fullName}, ID Number: _____________, 
-residing at ________________, 
-JMBG: _____________, 
-broj lične karte: ____________, 
-izdatu od strane ___________ (hereinafter: "Provider").
-
-Član 1. PREDMET UGOVORA
-Recipient agrees to pay Provider the fees set forth in the attached Exhibit A for the services to be provided by Provider to Recipient.
-
-Član 2. ROK IZVRŠENJA
-Services shall be performed during the period from ${new Date(data.startDate).toLocaleDateString('en-US')} to ${new Date(data.endDate).toLocaleDateString('en-US')}.
-
-Član 3. NAKNADA I NAČIN PLAĆANJA
-Recipient agrees to pay Provider the fees set forth in the attached Exhibit A for the services provided.
-
-Član 4. PRAVA I OBAVEZE
-1. Provider guarantees that the services will be performed independently and without infringement of the rights of third parties.
-2. Recipient agrees to provide all necessary information for the performance of the services.
-3. In the event of late payment, Recipient agrees to pay the statutory penalty interest.
-
-Član 5. POVERLJIVOST
-Provider agrees to maintain the confidentiality of all information obtained during the performance of the services.
-
-Član 6. PRETHOD UGOVORA
-Either party may terminate this Agreement in writing at least 7 days in advance.
-
-Član 7. REŠAVANJE SPOROVA
-Any disputes shall be resolved by the competent court in ________________.
-`;
-
-      // Update document with content
-      await generateDocument(doc.id, mockContract);
-      
-      // Create PDF using react-pdf/renderer
-     
-      
-     
-      
-      await loadUserDocuments();
-    } catch (error) {
-      console.error('Error generating document:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const onSubmit = async (data: FormData) => {
-    if (!user) {
-      setIsAuthModalOpen(true);
-      return;
-    }
-    await generateDocumentContent(data);
-  };
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
+ 
   const handleGetStarted = () => {
     if (!user) {
       setIsAuthModalOpen(true);
@@ -217,34 +89,48 @@ Any disputes shall be resolved by the competent court in ________________.
     setPdfPreview(pdfUrl);
     setShowForm(false);
   };
+  const NotFound = () => {
   return (
+    <div>
+      <h2>Stranica nije pronađena</h2>
+      <p>Žao nam je, ali stranica koju tražite ne postoji.</p>
+    </div>
+  );
+};
+
+
+  return (<UserProvider>
+    <BrowserRouter>
+
     <div className="min-h-screen bg-gray-50">
       {/* Zaglavlje */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <FileText className="h-8 w-8 text-blue-600" />
-              <h1 className="text-xl font-bold text-gray-900">Generator Pravnih Dokumenata</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              {user ? (
-                <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-600">{user.email}</span>
-                  <Button variant="outline" size="sm" onClick={handleSignOut}>
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Odjavi se
-                  </Button>
+       <Navbar 
+          
+          
+        />   
+         <Routes>
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/login" element={<AuthModal isOpen={true} onClose={() => {}} />} />
+          
+          <Route path="/profile" element={<Profile />} />
+         
+          <Route path="/" element={
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+              {!showForm ? (
+                <div className="text-center">
+                  
                 </div>
               ) : (
-                <Button size="sm" onClick={() => setIsAuthModalOpen(true)}>
-                  Prijavi se
-                </Button>
+                <div className="max-w-2xl mx-auto">
+                  <DocumentForm onDocumentGenerated={handleDocumentGenerated} />
+                </div>
               )}
-            </div>
-          </div>
-        </div>
-      </header>
+            </main>
+          } />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="*" element={<NotFound />} />
+        </Routes>
+        
   
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {!showForm ? (
@@ -658,8 +544,7 @@ Any disputes shall be resolved by the competent court in ________________.
           </>
         ) : (
           <div className="max-w-2xl mx-auto">
-            <h2 className="text-3xl font-bold mb-8 text-center">Create Your Document</h2>
-            <DocumentForm onDocumentGenerated={handleDocumentGenerated} />
+            
           </div>
         )}
       </main>
@@ -676,11 +561,13 @@ Any disputes shall be resolved by the competent court in ________________.
           onClose={() => setPdfPreview(null)}
           onProceed={() => {
             setPdfPreview(null);
-            setStep(2);
+           // setStep(2);
           }}
         />
       )}
     </div>
+    </BrowserRouter>
+    </UserProvider>
   );
 }
 

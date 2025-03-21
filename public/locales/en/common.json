@@ -1,0 +1,38 @@
+{
+    "appName": "Legal Document Generator",
+    "home": "Home",
+    "profile": "Profile",
+    "login": "Login",
+    "logout": "Logout",
+    "documentPreview": "Document Preview",
+    "close": "Close",
+    "proceedToPayment": "Proceed to Payment",
+    "page": "Page",
+    "of": "of",
+    "getStarted": "Get Started",
+    "heroTitle": "Legal Documents, Simplified",
+    "heroSubtitle": "Generate professional legal documents in minutes. Save time and money with our automated document generation system.",
+    "steps": {
+      "title": "Three Simple Steps",
+      "step1": {
+        "title": "Choose a Template",
+        "description": "Rich collection of legal documents tailored to Serbian legislation"
+      },
+      "step2": {
+        "title": "Fill in the Data",
+        "description": "Intuitive form that guides you through the process"
+      },
+      "step3": {
+        "title": "Download PDF",
+        "description": "Instant generation and download of ready-to-use document"
+      }
+    },
+    "features": {
+      "multiLanguage": "Multilingual Support",
+      "multiLanguageDesc": "Generate documents in Serbian, English and other languages with perfect character support.",
+      "security": "Bank-Grade Security",
+      "securityDesc": "Your documents are protected with encryption and business-level security measures.",
+      "instant": "Instant Generation",
+      "instantDesc": "Get your professional documents in PDF format in seconds."
+    }
+  }

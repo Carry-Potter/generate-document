@@ -1,0 +1,117 @@
+{
+    "appName": "Generator Pravnih Dokumenata",
+    "home": "Početna",
+    "profile": "Profil",
+    "login": "Prijavi se",
+    "logout": "Odjavi se",
+    "documentPreview": "Pregled dokumenta",
+    "close": "Zatvori",
+    "proceedToPayment": "Nastavi ka plaćanju",
+    "page": "Strana",
+    "of": "od",
+    "getStarted": "Započnite",
+    "heroTitle": "Pravni Dokumenti, Pojednostavljeni",
+    "heroSubtitle": "Generišite profesionalne pravne dokumente za nekoliko minuta. Uštedite vreme i novac uz naš automatizovani sistem za generisanje dokumenata.",
+    "steps": {
+      "title": "Tri jednostavna koraka",
+      "step1": {
+        "title": "Izaberite Template",
+        "description": "Bogata kolekcija pravnih dokumenata prilagođenih srpskom zakonodavstvu"
+      },
+      "step2": {
+        "title": "Popunite Podatke",
+        "description": "Intuitivni formular koji vas vodi kroz proces"
+      },
+      "step3": {
+        "title": "Preuzmite PDF",
+        "description": "Trenutno generisanje i preuzimanje spremnog dokumenta"
+      }
+    },
+    "features": {
+      "multiLanguage": "Višejezična Podrška",
+      "multiLanguageDesc": "Generišite dokumente na srpskom, engleskom i drugim jezicima sa savršenom podrškom za karaktere.",
+      "security": "Bankarska Sigurnost",
+      "securityDesc": "Vaši dokumenti su zaštićeni enkripcijom i sigurnosnim merama poslovnog nivoa.",
+      "instant": "Trenutno Generisanje",
+      "instantDesc": "Dobijte svoje profesionalne dokumente u PDF formatu za nekoliko sekundi."
+    }
+    ,
+      "pricing": {
+        "title": "Izaberite plan koji vam odgovara",
+        "subtitle": "Plaćajte samo za ono što vam je potrebno",
+        "flexiblePricing": "Fleksibilno plaćanje",
+        "chooseOption": "Izaberite opciju koja najbolje odgovara vašim potrebama",
+        "popular": "Najpopularnije",
+        "includes": "Uključuje",
+        "documentsLimit": "{{count}} dokumenata mesečno",
+        "unlimitedDocuments": "Neograničen broj dokumenata",
+        "subscribe": "Pretplati se"
+      },
+      
+        
+
+  "nav": {
+    "home": "Početna",
+    "pricing": "Cene",
+    "profile": "Profil",
+    "signOut": "Odjavi se",
+    "login": "Prijava",
+    "register": "Registracija"
+  },
+
+        "profile": {
+          "title": "Moj profil",
+          "userInfo": "Informacije o korisniku",
+          "email": "Email adresa",
+          "name": "Ime i prezime",
+          "company": "Kompanija",
+          "loading": "Učitavanje profila...",
+          "documents": "Moji dokumenti",
+          "noDocuments": "Još uvek nemate kreiranih dokumenata",
+          "subscription": {
+            "title": "Pretplata i krediti",
+            "yourPlan": "Vaš plan",
+            "noPlan": "Nemate aktivnu pretplatu",
+            "documentsRemaining": "Preostalo dokumenata",
+            "unlimited": "Neograničeno",
+            "renewsOn": "Obnavlja se",
+            "changePlan": "Promeni plan",
+            "subscribe": "Pretplati se"
+          },
+          "credits": {
+            "title": "Krediti",
+            "available": "dostupnih kredita",
+            "description": "Koristite kredite za kreiranje pojedinačnih dokumenata",
+            "buyMore": "Kupi još kredita"
+          }
+        },
+        "documents": {
+          "name": "Naziv dokumenta",
+          "type": "Tip",
+          "date": "Datum kreiranja",
+          "actions": "Akcije",
+          "view": "Pregledaj",
+          "download": "Preuzmi"
+        },
+        "payment": {
+          "success": {
+            "title": "Plaćanje uspešno!",
+            "verifying": "Verifikacija plaćanja...",
+            "subscriptionMessage": "Uspešno ste se pretplatili na {{plan}} plan.",
+            "creditsMessage": "Uspešno ste kupili {{credits}} kredita.",
+            "documentMessage": "Uspešno ste kupili dokument.",
+            "subscriptionDetails": "Detalji pretplate",
+            "plan": "Plan",
+            "documents": "Broj dokumenata",
+            "unlimited": "Neograničeno",
+            "period": "Period",
+            "nextBilling": "Sledeće plaćanje",
+            "creditsDetails": "Detalji kredita",
+            "creditsAdded": "Dodato {{credits}} kredita",
+            "totalCredits": "Ukupno imate {{total}} kredita",
+            "backToHome": "Nazad na početnu",
+            "viewAccount": "Pregledaj nalog"
+          }
+        }
+    
+  }

@@ -4,8 +4,12 @@ import { pdf } from '@react-pdf/renderer';
 import GeneratedPDF from './GeneratedPDF';
 import { createDocument, generateDocument } from '../lib/documents';
 import Button from './Button';
-import { Loader2 } from 'lucide-react';
+
 import { openai } from '../lib/openai';
+import { useTranslation } from 'react-i18next';
+import { useUser } from '../context/UserContext';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 
 type FormData = {
   // Freelancer details
@@ -42,20 +46,29 @@ type FormData = {
 };
 
 export default function DocumentForm({ onDocumentGenerated }: { onDocumentGenerated: (url: string) => void }) {
+  const { user, credits, refreshCredits } = useUser();
   const [isLoading, setIsLoading] = useState(false);
+  const { i18n } = useTranslation();
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     defaultValues: {
-      language: 'sr',
+      language: i18n.language.startsWith('en') ? 'en' : 'sr',
       currency: 'EUR',
       paymentType: 'full',
       paymentMethod: 'bank',
       contractType: 'service'
     }
   });
+  const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const generateDocumentContent = async (data: FormData) => {
     try {
       setIsLoading(true);
+      
+      if (credits < 1) {
+        toast.error(t('document.notEnoughCredits'));
+        return;
+      }
 
       const doc = await createDocument({
         title: `${data.projectName} - ${data.clientName}`,
@@ -66,149 +79,152 @@ export default function DocumentForm({ onDocumentGenerated }: { onDocumentGenera
         price: parseFloat(data.price),
       });
 
-      // Detaljniji prompt za ChatGPT
-      const prompt = data.language === 'sr' ? 
-        `Kreiraj profesionalan i detaljan ugovor o pružanju usluga. Ugovor treba da bude pravno validan prema srpskom zakonu.
+      if (doc) {
+        await refreshCredits();
         
-        Formatiranje:
-        - Naslov ugovora treba da bude velikim slovima i centriran
-        - Svi članovi ugovora treba da budu boldovani i velikim slovima
-        - Dodaj numeraciju za sve stavke
-        - Koristi profesionalnu pravnu terminologiju
-        
-        Detalji ugovora:
-        1. UGOVORNE STRANE:
-        Naručilac: ${data.clientName}
-        - Adresa: ${data.clientAddress}
-        - Email: ${data.clientEmail}
-        - Telefon: ${data.clientPhone}
-        
-        Izvršilac: ${data.freelancerName}
-        - Adresa: ${data.freelancerAddress}
-        - Email: ${data.freelancerEmail}
-        - Telefon: ${data.freelancerPhone}
-        ${data.freelancerPib ? `- PIB: ${data.freelancerPib}` : ''}
-        
-        2. PREDMET UGOVORA:
-        - Naziv projekta: ${data.projectName}
-        - Detaljan opis: ${data.projectDescription}
-        
-        3. ROKOVI:
-        - Početak: ${new Date(data.startDate).toLocaleDateString('sr-Latn')}
-        - Završetak: ${new Date(data.endDate).toLocaleDateString('sr-Latn')}
-        
-        4. FINANSIJSKI USLOVI:
-        - Iznos: ${data.price} ${data.currency}
-        - Način plaćanja: ${data.paymentMethod}
-        - Dinamika plaćanja: ${data.paymentType}
-        ${data.milestoneDetails ? `- Detalji plaćanja po fazama: ${data.milestoneDetails}` : ''}
-        
-        Obavezno uključi sledeće članove:
-        - Predmet ugovora (detaljan opis posla)
-        - Prava i obaveze obe strane
-        - Rokovi i dinamika izvršenja
-        - Cena i način plaćanja
-        - Poverljivost podataka
-        - Intelektualna svojina
-        - Raskid ugovora
-        - Viša sila
-        - Rešavanje sporova
-        - Završne odredbe
-        
-        Ugovor treba da bude detaljan, profesionalan i da štiti interese obe strane.`
-        : 
-        `Create a professional and detailed service agreement. The agreement should be legally valid.
-        
-        Formatting:
-        - Title should be in capital letters and centered
-        - All articles should be bold and in capital letters
-        - Add numbering for all items
-        - Use professional legal terminology
-        
-        Agreement details:
-        1. PARTIES:
-        Client: ${data.clientName}
-        - Address: ${data.clientAddress}
-        - Email: ${data.clientEmail}
-        - Phone: ${data.clientPhone}
-        
-        Service Provider: ${data.freelancerName}
-        - Address: ${data.freelancerAddress}
-        - Email: ${data.freelancerEmail}
-        - Phone: ${data.freelancerPhone}
-        ${data.freelancerPib ? `- Tax ID: ${data.freelancerPib}` : ''}
-        
-        2. SCOPE OF WORK:
-        - Project name: ${data.projectName}
-        - Detailed description: ${data.projectDescription}
-        
-        3. TIMELINE:
-        - Start date: ${new Date(data.startDate).toLocaleDateString('en-US')}
-        - End date: ${new Date(data.endDate).toLocaleDateString('en-US')}
-        
-        4. FINANCIAL TERMS:
-        - Amount: ${data.price} ${data.currency}
-        - Payment method: ${data.paymentMethod}
-        - Payment schedule: ${data.paymentType}
-        ${data.milestoneDetails ? `- Milestone payment details: ${data.milestoneDetails}` : ''}
-        
-        Please include the following sections:
-        - Scope of Work (detailed description)
-        - Rights and Obligations of both parties
-        - Timeline and Execution
-        - Price and Payment Terms
-        - Confidentiality
-        - Intellectual Property
-        - Termination
-        - Force Majeure
-        - Dispute Resolution
-        - Final Provisions
-        
-        The agreement should be detailed, professional and protect both parties' interests.`;
+        // Detaljniji prompt za ChatGPT
+        const prompt = data.language === 'sr' ? 
+          `Kreiraj profesionalan i detaljan ugovor o pružanju usluga. Ugovor treba da bude pravno validan prema srpskom zakonu.
+          
+          Formatiranje:
+          - Naslov ugovora treba da bude velikim slovima i centriran
+          - Svi članovi ugovora treba da budu boldovani i velikim slovima
+          - Dodaj numeraciju za sve stavke
+          - Koristi profesionalnu pravnu terminologiju
+          
+          Detalji ugovora:
+          1. UGOVORNE STRANE:
+          Naručilac: ${data.clientName}
+          - Adresa: ${data.clientAddress}
+          - Email: ${data.clientEmail}
+          - Telefon: ${data.clientPhone}
+          
+          Izvršilac: ${data.freelancerName}
+          - Adresa: ${data.freelancerAddress}
+          - Email: ${data.freelancerEmail}
+          - Telefon: ${data.freelancerPhone}
+          ${data.freelancerPib ? `- PIB: ${data.freelancerPib}` : ''}
+          
+          2. PREDMET UGOVORA:
+          - Naziv projekta: ${data.projectName}
+          - Detaljan opis: ${data.projectDescription}
+          
+          3. ROKOVI:
+          - Početak: ${new Date(data.startDate).toLocaleDateString('sr-Latn')}
+          - Završetak: ${new Date(data.endDate).toLocaleDateString('sr-Latn')}
+          
+          4. FINANSIJSKI USLOVI:
+          - Iznos: ${data.price} ${data.currency}
+          - Način plaćanja: ${data.paymentMethod}
+          - Dinamika plaćanja: ${data.paymentType}
+          ${data.milestoneDetails ? `- Detalji plaćanja po fazama: ${data.milestoneDetails}` : ''}
+          
+          Obavezno uključi sledeće članove:
+          - Predmet ugovora (detaljan opis posla)
+          - Prava i obaveze obe strane
+          - Rokovi i dinamika izvršenja
+          - Cena i način plaćanja
+          - Poverljivost podataka
+          - Intelektualna svojina
+          - Raskid ugovora
+          - Viša sila
+          - Rešavanje sporova
+          - Završne odredbe
+          
+          Ugovor treba da bude detaljan, profesionalan i da štiti interese obe strane.`
+          : 
+          `Create a professional and detailed service agreement. The agreement should be legally valid.
+          
+          Formatting:
+          - Title should be in capital letters and centered
+          - All articles should be bold and in capital letters
+          - Add numbering for all items
+          - Use professional legal terminology
+          
+          Agreement details:
+          1. PARTIES:
+          Client: ${data.clientName}
+          - Address: ${data.clientAddress}
+          - Email: ${data.clientEmail}
+          - Phone: ${data.clientPhone}
+          
+          Service Provider: ${data.freelancerName}
+          - Address: ${data.freelancerAddress}
+          - Email: ${data.freelancerEmail}
+          - Phone: ${data.freelancerPhone}
+          ${data.freelancerPib ? `- Tax ID: ${data.freelancerPib}` : ''}
+          
+          2. SCOPE OF WORK:
+          - Project name: ${data.projectName}
+          - Detailed description: ${data.projectDescription}
+          
+          3. TIMELINE:
+          - Start date: ${new Date(data.startDate).toLocaleDateString('en-US')}
+          - End date: ${new Date(data.endDate).toLocaleDateString('en-US')}
+          
+          4. FINANCIAL TERMS:
+          - Amount: ${data.price} ${data.currency}
+          - Payment method: ${data.paymentMethod}
+          - Payment schedule: ${data.paymentType}
+          ${data.milestoneDetails ? `- Milestone payment details: ${data.milestoneDetails}` : ''}
+          
+          Please include the following sections:
+          - Scope of Work (detailed description)
+          - Rights and Obligations of both parties
+          - Timeline and Execution
+          - Price and Payment Terms
+          - Confidentiality
+          - Intellectual Property
+          - Termination
+          - Force Majeure
+          - Dispute Resolution
+          - Final Provisions
+          
+          The agreement should be detailed, professional and protect both parties' interests.`;
 
-      // Generisanje ugovora
-      const completion = await openai.chat.completions.create({
-        messages: [
-          {
-            role: "system",
-            content: "Ti si iskusni pravnik specijalizovan za pisanje ugovora. Kreiraj detaljan i profesionalan ugovor koji je pravno validan i štiti interese obe strane."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        model: "gpt-3.5-turbo",
-        temperature: 0.7,
-        max_tokens: 2500,
-      });
+        // Generisanje ugovora
+        const completion = await openai.chat.completions.create({
+          messages: [
+            {
+              role: "system",
+              content: "Ti si iskusni pravnik specijalizovan za pisanje ugovora. Kreiraj detaljan i profesionalan ugovor koji je pravno validan i štiti interese obe strane."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          model: "gpt-4",
+          temperature: 0.4,
+          max_tokens: 500, 
+        });
 
-      const generatedContract = completion.choices[0].message.content;
-      if (!generatedContract) throw new Error("Failed to generate contract");
+        const generatedContract = completion.choices[0].message.content;
+        if (!generatedContract) throw new Error("Failed to generate contract");
 
-      // Formatiranje PDF-a
-      const formattedContract = generatedContract
-        .replace(/\*\*/g, '')  // Uklanjamo postojeće zvezdice
-        .replace(
-          /(ČLAN \d+\.|Article \d+\.|[A-ZČĆŽŠĐ\s]{5,}:)/g,
-          match => match.toUpperCase()  // Samo pretvaramo u velika slova
-        );
+        // Formatiranje PDF-a
+        const formattedContract = generatedContract
+          .replace(/\*\*/g, '')  // Uklanjamo postojeće zvezdice
+          .replace(
+            /(ČLAN \d+\.|Article \d+\.|[A-ZČĆŽŠĐ\s]{5,}:)/g,
+            match => match.toUpperCase()  // Samo pretvaramo u velika slova
+          );
 
-      await generateDocument(doc.id, formattedContract);
+        await generateDocument(doc.id, formattedContract);
 
-      const blob = await pdf(
-        <GeneratedPDF 
-          content={formattedContract}
-          formData={data}
-        />
-      ).toBlob();
+        const blob = await pdf(
+          <GeneratedPDF 
+            content={formattedContract}
+            formData={data}
+          />
+        ).toBlob();
 
-      const pdfUrl = URL.createObjectURL(blob);
-      onDocumentGenerated(pdfUrl);
-
+        const pdfUrl = URL.createObjectURL(blob);
+        onDocumentGenerated(pdfUrl);
+      }
     } catch (error) {
       console.error('Error generating document:', error);
-      alert('Došlo je do greške prilikom generisanja dokumenta. Pokušajte ponovo.');
+      toast.error(t('document.generationError'));
     } finally {
       setIsLoading(false);
     }
@@ -217,6 +233,30 @@ export default function DocumentForm({ onDocumentGenerated }: { onDocumentGenera
   return (
     <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">Kreiranje ugovora</h2>
+      
+      <div className="mb-6 p-4 bg-blue-50 rounded-lg flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-medium text-blue-800">{t('document.availableCredits')}</h3>
+          <p className="text-xl font-bold text-blue-600">{credits}</p>
+        </div>
+        
+        {credits < 1 && (
+          <button 
+            onClick={() => navigate('/pricing')}
+            className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+          >
+            {t('document.buyCredits')}
+          </button>
+        )}
+      </div>
+      
+      {credits < 1 && (
+        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-yellow-800">
+            {t('document.notEnoughCredits')}
+          </p>
+        </div>
+      )}
       
       <form onSubmit={handleSubmit(generateDocumentContent)} className="space-y-8">
         {/* Freelancer Section */}
@@ -521,17 +561,12 @@ export default function DocumentForm({ onDocumentGenerated }: { onDocumentGenera
         <div className="pt-6">
           <Button 
             type="submit" 
-            disabled={isLoading} 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            disabled={isLoading || credits < 1}
+            className={`w-full py-2 px-4 rounded font-medium ${
+              credits < 1 ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+            } text-white`}
           >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generisanje ugovora...
-              </>
-            ) : (
-              'Generiši ugovor'
-            )}
+            {isLoading ? t('document.generating') : t('document.generate')}
           </Button>
         </div>
       </form>
